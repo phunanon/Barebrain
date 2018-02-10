@@ -25,7 +25,7 @@ uint progSize = 0; //program size
 char* prog; //program array
 byte* compR; //compressed register array
 char* progEnd; //program endpoint
-byte* tape = (byte*)malloc(TAPE); //memory
+byte* tape = (byte*)calloc(TAPE, sizeof(*tape)); //memory
 char** loopOpens; //open loop positions
 char** loopCloses; //close loop positions
 std::string stou = ""; //stdout
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
                   //Do program compression
                     if (prevComm == prog[pc] && prog[pc] != '[' && prog[pc] != ']') //Is this command the same as the previous one?
                     {
-                        if (compR[pc] != 255) //Is the register for this command not full?
+                        if (compR[pc-1] != 255) //Is the register for this command not full?
                         {
                             pc--; //Overwrite previous command
                             compR[pc]++; //Increment the amount of times we must run this command
@@ -163,12 +163,12 @@ int main(int argc, char *argv[])
                 default: break; //When it's not, allow the next byte to overwrite
             }
         }
-        progSize = ps; //Set actual program size
+        progSize = pc; //Set actual program size
         progEnd = prog + progSize; //Set program end pointer
-      //Store loop details (in loopOpens[] (HAAHAHAHAHAH NEVER. NEVER!) and loopCloses[])
+      //Store loop details, in loopOpens[] and loopCloses[]
         bool err = false;
-        loopOpens = (char**)malloc(progSize);
-        loopCloses = (char**)malloc(progSize);
+        loopOpens = (char**)calloc(progSize, sizeof(char**));
+        loopCloses = (char**)calloc(progSize, sizeof(char**));
         for (pc = 0; pc < progSize; pc++)
         {
             if (prog[pc] == ']')
