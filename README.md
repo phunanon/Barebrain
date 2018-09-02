@@ -1,6 +1,8 @@
-# Brainfuck-progs
-A collection of brainfuck programs
+# Barebrain
 
-phunFuckInt - brainfuck interpreter. There are two versions: a version which only saves loop closes, and one which saves both loop opens and closes but doesn't do argument-input.
+**A relatively fast brainfuck interpreter.**
 
-phunFuckComp - a simple brainfuck to C transpiler.
+Compile by:  
+`gcc Barebrain.c -o Barebrain -O3`  
+or `clang Barebrain.c -o Barebrain -O3`  
+Run by: `./Barebrain program.b`
