@@ -1,15 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define INC 0x0
-#define DEC 0x1
-#define RIG 0x2
-#define LEF 0x3
-#define LOO 0x4
-#define END 0x5
-#define PUT 0x6
-#define GET 0x7
-#define ZER 0x8
+enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
+
 #define TAPE_LEN 30000
 #define PROG_SIZE 30000
 
@@ -58,7 +51,7 @@ int main (int argc, char *argv[])
 			}
 			
 			//Check for [-]
-			if (o > 2 && arr_p[o] == END && arr_p[o-1] == DEC && arr_p[o-2] == LOO) {
+			if (arr_p[o] == END && o > 2 && arr_p[o-1] == DEC && arr_p[o-2] == LOO) {
 				o -= 2;
 				arr_p[o] = ZER;
 			}
@@ -66,15 +59,15 @@ int main (int argc, char *argv[])
 		fclose(fp);
 	}
 	
-	uint8_t *p = arr_p;				//Program pointer
-	uint8_t *p_end = arr_p + o + 1;	//Program end pointer
+	uint8_t *p = arr_p;	//Program pointer
+	*(p+o+1) = EOP;		//Append End-Of-Program
 
 	//Generate loop offset heuristics
 	{
 		uint8_t inception = 0;
 		uint8_t *inspect;
 		uint8_t loopErr = 0;
-		do {
+		while (*(++p) != EOP) {
 
 			if (*p == END) {
 				inception = 1;
@@ -92,7 +85,7 @@ int main (int argc, char *argv[])
 					++inspect;
 					if (*inspect == LOO) ++inception;
 					else if (*inspect == END) --inception;
-				} while (inception && inspect != p_end);
+				} while (inception && *inspect != EOP);
 				arr_lc[p - arr_p] = inspect - p;	//Store offset
 			}
 
@@ -101,7 +94,7 @@ int main (int argc, char *argv[])
 				return 1;
 			}
 
-		} while (++p != p_end);
+		}
 		p = arr_p; //Reset
 	}
 
@@ -111,7 +104,8 @@ int main (int argc, char *argv[])
 	uint16_t offset;		//Stores loop offset
 
 	//Begin evaluating program
-	do {
+	char isRunning = 1;
+	while (isRunning) {
 		switch (*p) {
 			case INC: *t += *r;	break;
 			case DEC: *t -= *r;	break;
@@ -132,11 +126,12 @@ int main (int argc, char *argv[])
 			case PUT: for (uint8_t i = 0; i < *r; ++i) putchar(*t);		break;
 			case GET: for (uint8_t i = 0; i < *r; ++i) *t = getchar();	break;
 			case ZER: *t = 0; break;
-			break;
+			case EOP: isRunning = 0; break;
 		}
 		++p;
 		++r;
-	} while (p != p_end);
+	}
 
 	return 0;
 }
+
