@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define TAPE_LEN		30000
-#define PROG_SIZE		30000
-#define INCEPTION_LIMIT	64
+#define TAPE_LEN	10000
+#define PROG_SIZE	10000
+#define LOOP_MAX	256
 
 enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
 
 int main (int argc, char *argv[])
 {
 	//Check if program was supplied, and attempt to open
-	FILE *fp;
-	if (argc != 2 || (fp = fopen(argv[1], "r")) == NULL) {
+	FILE *file;
+	if (argc != 2 || (file = fopen(argv[1], "r")) == NULL) {
 		puts("Err: Supply program filename as sole argument.");
 		return 1;
 	}
@@ -28,7 +28,7 @@ int main (int argc, char *argv[])
 	{
 		uint16_t a = 0; //Input iterator
 		int8_t ch; //Character buffer
-		while ((ch = getc(fp)) != EOF) {
+		while ((ch = getc(file)) != EOF) {
 
 			//Filter for valid op's
 			switch (ch) {
@@ -44,7 +44,7 @@ int main (int argc, char *argv[])
 			else {
 				++o;
 				if (o == PROG_SIZE - 1) {
-					puts("Err: Maximum program size exceeded.");
+					puts("Err: Exceeds maximum program size.");
 					return 1;
 				}
 				arr_p[o] = ch;
@@ -58,23 +58,23 @@ int main (int argc, char *argv[])
 			}
 		}
 	}
-	fclose(fp);
+	fclose(file);
 	
 	uint8_t *p = arr_p;	//Program pointer
 	*(p+o+1) = EOP;		//Append End-Of-Program
 
 	//Generate loop offset heuristics
 	{
-		uint8_t* inceptions[INCEPTION_LIMIT];
-		uint8_t** inception = inceptions;
+		uint8_t* inception[LOOP_MAX];
+		uint8_t** i = inception;
 
 		while (*(++p) != EOP) {
-			if (*p == LOO) *(++inception) = p; //Add to inception queue
+			if (*p == LOO) *(++i) = p; //Append to inception queue
 			else if (*p == END) {
-				uint16_t offset = p - *inception;
-				arr_el[p - arr_p] = offset;
-				arr_le[*inception - arr_p] = offset;
-				--inception;
+				uint16_t offset = p - *i;
+				arr_el[p - arr_p] = offset;		//
+				arr_le[*i - arr_p] = offset;	// Store offsets
+				--i;
 			}
 		}
 		p = arr_p; //Reset
@@ -86,8 +86,8 @@ int main (int argc, char *argv[])
 	uint16_t offset;		//Stores loop offset
 
 	//Begin evaluating program
-	char isRunning = 1;
-	while (isRunning) {
+	uint8_t do_run = 1;
+	while (do_run) {
 		switch (*p) {
 			case INC: *t += *r;	break;
 			case DEC: *t -= *r;	break;
@@ -108,7 +108,7 @@ int main (int argc, char *argv[])
 			case PUT: for (uint8_t i = 0; i < *r; ++i) putchar(*t);		break;
 			case GET: for (uint8_t i = 0; i < *r; ++i) *t = getchar();	break;
 			case ZER: *t = 0; break;
-			case EOP: isRunning = 0; break;
+			case EOP: do_run = 0; break;
 		}
 		++p;
 		++r;
@@ -116,4 +116,3 @@ int main (int argc, char *argv[])
 
 	return 0;
 }
-
