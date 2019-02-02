@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define TAPE_LEN	30000
-#define PROG_SIZE	30000
+#define TAPE_LEN		30000
+#define PROG_SIZE		30000
+#define INCEPTION_LIMIT	64
 
 enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
 
@@ -18,12 +19,12 @@ int main (int argc, char *argv[])
 	//Prepare stores
 	uint8_t arr_p[PROG_SIZE];	//Stores program op codes
 	uint8_t arr_r[PROG_SIZE];	//Stores op code repeats
-	uint16_t arr_lc[PROG_SIZE];	//Stores offset to close op pointer at open op
-	uint16_t arr_lo[PROG_SIZE];	//Stores offset to open op pointer at close op
+	uint16_t arr_le[PROG_SIZE];	//Store LOO-to-END offsets
+	uint16_t arr_el[PROG_SIZE];	//Store END-to-LOO offsets
 	uint8_t arr_t[TAPE_LEN];	//Stores tape data
 
-	//Extract op codes and their repeat counts, with some optimisation
 	uint16_t o = 0; //Opcode iterator
+	//Extract op codes and their repeat counts, with some optimisation
 	{
 		uint16_t a = 0; //Input iterator
 		int8_t ch; //Character buffer
@@ -64,36 +65,17 @@ int main (int argc, char *argv[])
 
 	//Generate loop offset heuristics
 	{
-		uint8_t inception = 0;
-		uint8_t *inspect;
-		uint8_t loopErr = 0;
+		uint8_t* inceptions[INCEPTION_LIMIT];
+		uint8_t** inception = inceptions;
+
 		while (*(++p) != EOP) {
-
-			if (*p == END) {
-				inception = 1;
-				inspect = p;
-				do {
-					--inspect;
-					if (*inspect == END) ++inception;
-					else if (*inspect == LOO) --inception;
-				} while (inception && inspect != arr_p);
-				arr_lo[p - arr_p] = p - inspect; //Store offset
-			} else if (*p == LOO) {
-				inception = 1;
-				inspect = p;
-				do {
-					++inspect;
-					if (*inspect == LOO) ++inception;
-					else if (*inspect == END) --inception;
-				} while (inception && *inspect != EOP);
-				arr_lc[p - arr_p] = inspect - p;	//Store offset
+			if (*p == LOO) *(++inception) = p; //Add to inception queue
+			else if (*p == END) {
+				uint16_t offset = p - *inception;
+				arr_el[p - arr_p] = offset;
+				arr_le[*inception - arr_p] = offset;
+				--inception;
 			}
-
-			if (inception) {
-				puts("Err: Unmatched loops.");
-				return 1;
-			}
-
 		}
 		p = arr_p; //Reset
 	}
@@ -113,13 +95,13 @@ int main (int argc, char *argv[])
 			case LEF: t -= *r;	break;
 			case LOO:
 				if (*t) break;
-				offset = arr_lc[p - arr_p];
+				offset = arr_le[p - arr_p];
 				p += offset;	//
 				r += offset;	// Jump forward
 				break;
 			case END:
 				if (!*t) break;
-				offset = arr_lo[p - arr_p];
+				offset = arr_el[p - arr_p];
 				p -= offset;	//
 				r -= offset;	// Jump backward
 				break;
