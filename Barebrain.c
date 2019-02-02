@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
+#define TAPE_LEN	30000
+#define PROG_SIZE	30000
 
-#define TAPE_LEN 30000
-#define PROG_SIZE 30000
+enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
 
 int main (int argc, char *argv[])
 {
@@ -14,14 +14,14 @@ int main (int argc, char *argv[])
 		puts("Err: Supply program filename as sole argument.");
 		return 1;
 	}
-	
+
 	//Prepare stores
 	uint8_t arr_p[PROG_SIZE];	//Stores program op codes
 	uint8_t arr_r[PROG_SIZE];	//Stores op code repeats
 	uint16_t arr_lc[PROG_SIZE];	//Stores offset to close op pointer at open op
 	uint16_t arr_lo[PROG_SIZE];	//Stores offset to open op pointer at close op
 	uint8_t arr_t[TAPE_LEN];	//Stores tape data
-	
+
 	//Extract op codes and their repeat counts, with some optimisation
 	uint16_t o = 0; //Opcode iterator
 	{
@@ -37,27 +37,27 @@ int main (int argc, char *argv[])
 				case '.': ch = PUT; break; case ',': ch = GET; break;
 				default: continue;
 			}
-			
-			//Check if op is repeated (but not for loop ops)
+
+			//Tally repeated op (ex. loop)
 			if (ch == arr_p[o] && ch != LOO && ch != END) ++arr_r[o];
 			else {
 				++o;
-				if (o == PROG_SIZE) {
+				if (o == PROG_SIZE - 1) {
 					puts("Err: Maximum program size exceeded.");
 					return 1;
 				}
 				arr_p[o] = ch;
 				arr_r[o] = 1;
 			}
-			
+
 			//Check for [-]
 			if (arr_p[o] == END && o > 2 && arr_p[o-1] == DEC && arr_p[o-2] == LOO) {
 				o -= 2;
 				arr_p[o] = ZER;
 			}
 		}
-		fclose(fp);
 	}
+	fclose(fp);
 	
 	uint8_t *p = arr_p;	//Program pointer
 	*(p+o+1) = EOP;		//Append End-Of-Program
