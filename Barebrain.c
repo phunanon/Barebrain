@@ -5,7 +5,7 @@
 #define TAPE_LEN	1024
 #define LOOP_MAX	256
 
-enum Symbols { INC, DEC, RIG, LEF, LOO, END, PUT, GET, ZER, EOP };
+enum Symbols { INC='+', DEC='-', RIG='>', LEF='<', LOO='[', END=']', PUT='.', GET=',', ZER='0', EOP='E' };
 
 int main (int argc, char* argv[])
 {
@@ -25,10 +25,7 @@ int main (int argc, char* argv[])
 		while ((ch = getc(file)) != EOF) {
 			//Filter for valid op's
 			switch (ch) {
-				case '+': ch = INC; break; case '-': ch = DEC; break;
-				case '>': ch = RIG; break; case '<': ch = LEF; break;
-				case '[': ch = LOO; break; case ']': ch = END; break;
-				case '.': ch = PUT; break; case ',': ch = GET; break;
+				case INC: case DEC: case RIG: case LEF: case LOO: case END: case PUT: case GET: break;
 				default: continue;
 			}
 
