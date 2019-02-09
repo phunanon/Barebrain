@@ -40,11 +40,11 @@ int main (int argc, char* argv[])
 				}
 				arr_p[o] = ch;
 				arr_r[o] = 1;
-			}
 
-			//Check for [-]
-			if (arr_p[o] == END && o > 2 && arr_p[o-1] == DEC && arr_p[o-2] == LOO)
-				arr_p[o -= 2] = ZER;
+				//Check for [-]
+				if (ch == END && o > 2 && arr_p[o-1] == DEC && arr_p[o-2] == LOO)
+					arr_p[o -= 2] = ZER;
+			}
 		}
 		arr_p[o+1] = EOP;	//Append End-Of-Program
 	}
