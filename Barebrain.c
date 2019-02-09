@@ -38,7 +38,7 @@ int main (int argc, char* argv[])
 			else {
 				++o;
 				if (o == PROG_MAX - 1) {
-					puts("Err: Exceeds maximum program size.");
+					puts("Exceeds maximum program size.");
 					return 1;
 				}
 				arr_p[o] = ch;
@@ -54,9 +54,8 @@ int main (int argc, char* argv[])
 	fclose(file);
 	
 	uint8_t* p = arr_p;			//Program pointer
-	uint16_t arr_le[PROG_MAX];	//LOO-to-END offset index
-	uint16_t arr_el[PROG_MAX];	//END-to-LOO offset index
-	//Generate loop offset heuristics
+	uint16_t arr_o[PROG_MAX];	//LOO-to-END & END-to-LOO offset index
+	//Generate heuristic: loop offset index
 	{
 		uint8_t* loops[LOOP_MAX];
 		uint8_t** l = loops - 1;
@@ -65,9 +64,8 @@ int main (int argc, char* argv[])
 			if (*p == LOO)
 				*(++l) = p; //Append to loop queue
 			else if (*p == END) {
-				uint16_t offset = p - *l;
-				arr_el[p  - arr_p] = offset;	//
-				arr_le[*l - arr_p] = offset;	// Store offsets
+				arr_o[p - arr_p]  =			//
+				arr_o[*l - arr_p] = p - *l;	// Store offsets
 				--l;
 			}
 		}
@@ -88,13 +86,13 @@ int main (int argc, char* argv[])
 			case LEF:  t -= *r; break;
 			case LOO:
 				if (*t) break;
-				offset = arr_le[p - arr_p];
+				offset = arr_o[p - arr_p];
 				p += offset;	//
 				r += offset;	// Jump forward
 				break;
 			case END:
 				if (!*t) break;
-				offset = arr_el[p - arr_p];
+				offset = arr_o[p - arr_p];
 				p -= offset;	//
 				r -= offset;	// Jump backward
 				break;
