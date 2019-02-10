@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define PROG_MAX	4096
-#define TAPE_LEN	1024
+#define PROG_MAX	16384
+#define TAPE_LEN	512
 #define LOOP_MAX	256
 
 enum Symbols { INC='+', DEC='-', RIG='>', LEF='<', LOO='[', END=']', PUT='.', GET=',', ZER='0', EOP='E' };
@@ -18,10 +18,13 @@ int main (int argc, char* argv[])
 
 	uint8_t arr_p[PROG_MAX];	//Program op code tape
 	uint8_t arr_r[PROG_MAX];	//Op code repeat index
-	//Extract op codes and their repeat counts, with some optimisation
+	uint16_t arr_o[PROG_MAX];	//LOO-to-END & END-to-LOO offset index
+	//Extract op codes, tally repeats, generate loop offset index heuristic
 	{
-		uint16_t o = 0; //Opcode iterator
-		int8_t ch;		//Char buffer
+		uint16_t loops[LOOP_MAX];	//Loop op code queue
+		uint16_t* l = loops - 1;	//Loop queue pointer
+		uint16_t o = 0;				//Opcode iterator
+		int8_t ch;					//Char buffer
 		while ((ch = getc(file)) != EOF) {
 			//Filter for valid op's
 			switch (ch) {
@@ -40,8 +43,17 @@ int main (int argc, char* argv[])
 				}
 				arr_p[o] = ch;
 				arr_r[o] = 1;
+				
+				//Loop heuristic
+				if (ch == LOO)
+					*(++l) = o; //Append to loop queue
+				else if (ch == END) {
+					arr_o[o]  =			//
+					arr_o[*l] = o - *l;	// Store offsets
+					--l;
+				}
 
-				//Check for [-]
+				//Optimise away potential [-]
 				if (ch == END && o > 2 && arr_p[o-1] == DEC && arr_p[o-2] == LOO)
 					arr_p[o -= 2] = ZER;
 			}
@@ -49,28 +61,10 @@ int main (int argc, char* argv[])
 		arr_p[o+1] = EOP;	//Append End-Of-Program
 	}
 	fclose(file);
-	
-	uint8_t* p = arr_p;			//Program pointer
-	uint16_t arr_o[PROG_MAX];	//LOO-to-END & END-to-LOO offset index
-	//Generate heuristic: loop offset index
-	{
-		uint8_t* loops[LOOP_MAX];
-		uint8_t** l = loops - 1;
-
-		while (*(++p) != EOP) {
-			if (*p == LOO)
-				*(++l) = p; //Append to loop queue
-			else if (*p == END) {
-				arr_o[p - arr_p]  =			//
-				arr_o[*l - arr_p] = p - *l;	// Store offsets
-				--l;
-			}
-		}
-		p = arr_p; //Reset
-	}
 
 	uint8_t arr_t[TAPE_LEN];//Tape data store
 	uint8_t* t = arr_t;		//Tape pointer
+	uint8_t* p = arr_p;		//Program pointer
 	uint8_t* r = arr_r;		//Repeat pointer
 	uint16_t offset;		//Loop offset cache
 	//Evaluate program
@@ -79,6 +73,7 @@ int main (int argc, char* argv[])
 		switch (*p) {
 			case INC: *t += *r; break;
 			case DEC: *t -= *r; break;
+			case ZER: *t  =  0; break;
 			case RIG:  t += *r; break;
 			case LEF:  t -= *r; break;
 			case LOO:
@@ -95,7 +90,6 @@ int main (int argc, char* argv[])
 				break;
 			case PUT: for (uint8_t i = 0; i < *r; ++i) putchar(*t);		break;
 			case GET: for (uint8_t i = 0; i < *r; ++i) *t = getchar();	break;
-			case ZER: *t = 0; break;
 			case EOP: do_run = 0; break;
 		}
 		++p;
