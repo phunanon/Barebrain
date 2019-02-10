@@ -5,7 +5,7 @@
 #define TAPE_LEN	512
 #define LOOP_MAX	256
 
-enum Symbols { INC='+', DEC='-', RIG='>', LEF='<', LOO='[', END=']', PUT='.', GET=',', ZER='0', EOP='E' };
+enum Symbols { INC='+', DEC='-', RIG='>', LEF='<', LOO='[', END=']', PUT='.', GET=',', ZER='0', EOP=0 };
 
 int main (int argc, char* argv[])
 {
@@ -16,9 +16,9 @@ int main (int argc, char* argv[])
 		return 1;
 	}
 
-	uint8_t arr_p[PROG_MAX];	//Program op code tape
-	uint8_t arr_r[PROG_MAX];	//Op code repeat index
-	uint16_t arr_o[PROG_MAX];	//LOO-to-END & END-to-LOO offset index
+	uint8_t arr_p[PROG_MAX] = {EOP};//Program op code tape
+	uint8_t arr_r[PROG_MAX];		//Op code repeat index
+	uint16_t arr_o[PROG_MAX];		//LOO-to-END & END-to-LOO offset index
 	//Extract op codes, tally repeats, generate loop offset index heuristic
 	{
 		uint16_t loops[LOOP_MAX];	//Loop op code queue
@@ -36,14 +36,13 @@ int main (int argc, char* argv[])
 			if (ch == arr_p[o] && ch != LOO && ch != END)
 				++arr_r[o];
 			else {
-				++o;
-				if (o == PROG_MAX - 1) {
+				if (++o == PROG_MAX - 1) {
 					puts("Exceeds maximum program size.");
 					return 1;
 				}
 				arr_p[o] = ch;
 				arr_r[o] = 1;
-				
+
 				//Loop heuristic
 				if (ch == LOO)
 					*(++l) = o; //Append to loop queue
@@ -58,14 +57,13 @@ int main (int argc, char* argv[])
 					arr_p[o -= 2] = ZER;
 			}
 		}
-		arr_p[o+1] = EOP;	//Append End-Of-Program
 	}
 	fclose(file);
 
 	uint8_t arr_t[TAPE_LEN];//Tape data store
 	uint8_t* t = arr_t;		//Tape pointer
-	uint8_t* p = arr_p;		//Program pointer
-	uint8_t* r = arr_r;		//Repeat pointer
+	uint8_t* p = arr_p+1;	//Program pointer
+	uint8_t* r = arr_r+1;	//Repeat pointer
 	uint16_t offset;		//Loop offset cache
 	//Evaluate program
 	uint8_t do_run = 1;
