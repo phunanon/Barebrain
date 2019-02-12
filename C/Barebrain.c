@@ -21,8 +21,8 @@ int main (int argc, char* argv[])
 	uint16_t arr_o[PROG_MAX];		//LOO-to-END & END-to-LOO offset index
 	//Extract op codes, tally repeats, generate loop offset index heuristic
 	{
-		uint16_t loops[LOOP_MAX];	//Loop op code queue
-		uint16_t* l = loops - 1;	//Loop queue pointer
+		uint16_t loops[LOOP_MAX];	//Loop op code stack
+		uint16_t* l = loops - 1;	//Loop stack pointer
 		uint16_t o = 0;				//Opcode iterator
 		int8_t ch;					//Char buffer
 		while ((ch = getc(file)) != EOF) {
@@ -45,7 +45,7 @@ int main (int argc, char* argv[])
 
 				//Loop heuristic
 				if (ch == LOO)
-					*(++l) = o; //Append to loop queue
+					*(++l) = o; //Append to loop stack
 				else if (ch == END) {
 					arr_o[o]  =			//
 					arr_o[*l] = o - *l;	// Store offsets
