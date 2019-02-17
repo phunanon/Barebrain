@@ -60,11 +60,11 @@ int main (int argc, char* argv[])
 	}
 	fclose(file);
 
-	uint8_t arr_t[TAPE_LEN];//Tape data store
-	uint8_t* t = arr_t;		//Tape pointer
-	uint8_t* p = arr_p+1;	//Program pointer
-	uint8_t* r = arr_r+1;	//Repeat pointer
-	uint16_t offset;		//Loop offset cache
+	uint8_t arr_t[TAPE_LEN] = {0};	//Tape data store
+	uint8_t* t = arr_t;				//Tape pointer
+	uint8_t* p = arr_p+1;			//Program pointer
+	uint8_t* r = arr_r+1;			//Repeat pointer
+	uint16_t offset;				//Loop offset cache
 	//Evaluate program
 	for (; *p != EOP; ++p, ++r) {
 		switch (*p) {
