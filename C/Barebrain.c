@@ -66,8 +66,7 @@ int main (int argc, char* argv[])
 	uint8_t* r = arr_r+1;	//Repeat pointer
 	uint16_t offset;		//Loop offset cache
 	//Evaluate program
-	uint8_t do_run = 1;
-	while (do_run) {
+	for (; *p != EOP; ++p, ++r) {
 		switch (*p) {
 			case INC: *t += *r; break;
 			case DEC: *t -= *r; break;
@@ -88,9 +87,6 @@ int main (int argc, char* argv[])
 				break;
 			case PUT: for (uint8_t i = 0; i < *r; ++i) putchar(*t);		break;
 			case GET: for (uint8_t i = 0; i < *r; ++i) *t = getchar();	break;
-			case EOP: do_run = 0; break;
 		}
-		++p;
-		++r;
 	}
 }
