@@ -18,7 +18,7 @@ while True:
 	char = file.read(1)
 	if not char: break
 	
-	if char not in ['>', '<', '+', '-', '.', ',', '[', ']']: continue
+	if char not in ('>', '<', '+', '-', '.', ',', '[', ']'): continue
 	
 	#Tally repeats, else accept unique op
 	if char == arr_p[p] and char not in ('[', ']'):
