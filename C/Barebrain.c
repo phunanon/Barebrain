@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -10,9 +9,10 @@ int main (int argc, char* argv[])
 {
   FILE* file;
   //Check if program was supplied, and attempt to open
-  if (argc != 2 || (file = fopen(argv[1], "r")) == NULL)
-    puts("Supply program filename as sole argument."),
-    exit(1);
+  if (argc != 2 || (file = fopen(argv[1], "r")) == NULL) {
+    puts("Supply program filename as sole argument.");
+    return 1;
+  }
 
   uint8_t  arr_p[PROG_MAX] = {0}; //Program op code tape
   uint8_t  arr_r[PROG_MAX];       //Op code repeat index
@@ -29,9 +29,10 @@ int main (int argc, char* argv[])
         ++arr_r[o];
         continue;
       }
-      if (++o == PROG_MAX - 1)
-        puts("Exceeds maximum program size."),
-        exit(1);
+      if (++o == PROG_MAX - 1) {
+        puts("Exceeds maximum program size.");
+        return 1;
+      }
       arr_p[o] = ch;
       arr_r[o] = 1;
 
@@ -80,4 +81,5 @@ int main (int argc, char* argv[])
       case ',': for (uint8_t i = 0; i < *r; ++i) *t = getchar(); break;
     }
   }
+  return 0;
 }
