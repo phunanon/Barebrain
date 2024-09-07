@@ -21,7 +21,7 @@ while True:
 	if char not in ('>', '<', '+', '-', '.', ',', '[', ']'): continue
 
 	#Tally repeats, else accept unique op
-	if char == arr_p[p] and char not in ('[', ']'):
+	if char == arr_p[p] and char not in ('[', ']', '.', ','):
 		arr_r[p] += 1
 	else:
 		p += 1
